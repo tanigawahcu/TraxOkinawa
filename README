@@ -1,0 +1,40 @@
+---------------------------------------------------------------------
+                Trax host program (under development)                
+---------------------------------------------------------------------
+
+Current status:
+  - Supports only inputs from stdin (console)
+  - Serial devices / TCP / etc. are not supported yet
+
+Requirements:
+  - FreeBSD / Linux / Mac, etc. (Don't know much about Cygwin...)
+  - VT100 compatible terminal
+  - C++ compiler
+
+How to build:
+  % make
+
+Programs & Files:
+  - trax       : Trax host program CUI
+  - trax-httpd : HTTP server for Trax GUI 
+  - trax.html  : HTML / JS / CSS for trax-httpd
+  - tests/     : Game logs for test (some logs from http://traxgame.com)
+
+How to run:
+  - simple console run
+      % ./trax
+  - Log file replay
+      % ./trax < tests/longest-60.trx
+
+  - simple console run + HTTP GUI (http://your.host:11000/)
+      % ./trax | ./trax-httpd
+
+  - Log file replay + HTTP GUI (http://your.host:11000/)
+      % ./trax < tests/longest-60.trx | ./trax-httpd
+
+  With trax-httpd, connect to http://your.host:11000/
+
+License:
+  - Yasunori Osana <osana@eee.u-ryukyu.ac.jp> wrote this file.
+  - This file is provided "AS IS" in the beerware license rev 42.
+    (see http://people.freebsd.org/~phk/)

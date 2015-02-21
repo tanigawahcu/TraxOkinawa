@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    <title>Trax</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" type="text/javascript"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.1/jquery-ui.min.js" type="text/javascript"></script>
+    <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.1/themes/blitzer/jquery-ui.css" type="text/css" rel="stylesheet">
+
+
+<!--
+    <script src="http://localhost/jquery/jquery.min.js" type="text/javascript"></script>
+    <script src="http://localhost/jquery/jquery-ui.min.js" type="text/javascript"></script>
+    <link href="http://localhost/jquery/jquery-ui.css" type="text/css" rel="stylesheet">
+-->
+
+
+    <script type="text/javascript">
+
+ var img_url_base = "http://localhost/traxjp/img/small-";
+ img_url_base = "http://lut.eee.u-ryukyu.ac.jp/traxjp/img/small-";
+
+ function get_next(){
+   $.ajax({
+     type: "GET",
+     url: "/", 
+     cache: false,
+     success: function(data){
+       got_one(data);
+     },
+     data: "",
+     error: function(XMLHttpRequest, textStatus, errorThrown){
+       $('BODY').append('<pre>AJAX Error: \n' +
+		       'Status: ' + XMLHttpRequest.status + '\n' +
+		       'StatusText: ' + XMLHttpRequest.statusText + '\n' +
+		       'Response: ' + XMLHttpRequest.responseText +
+		       '</pre>');
+     }
+   });
+ }
+
+ 
+ function got_one(data){
+   d = String(data);
+ 
+   red_pattern ="\\[0m";
+   reg = new RegExp(red_pattern, "g"); // global match 
+   d = d.replace(reg,"");
+
+   var dl = d.split("\x0a");
+
+   var row=1;
+   $('pre').text("");
+   var new_tile_x = [];
+   var new_tile_y = [];
+   var rows, cols;
+   for (var l=0; l<dl.length; l++){
+     $('pre').append(dl[l] + "\x0a");
+
+     if(dl[l].match(/^Turn/)!=null){ // "Turn" row
+       dl[l].match(/^Turn ([0-9]+) .*([\@A-Z]+[0-9]+[\/\\\+])\[X:([0-9]+), Y:([0-9]+), Tile:([\/\\\+])/);
+       var turn = RegExp.$1;
+       var move = RegExp.$2;
+       var xpos = RegExp.$3;
+       var ypos = RegExp.$4;
+       new_tile_x.push(xpos); new_tile_y.push(ypos);
+       console.log("Turn " + RegExp.$1 + "(" + RegExp.$2 + ") X: " + RegExp.$3 +
+       			 ", Y: " + RegExp.$4 +
+			    ", Tile: " + RegExp.$4 + " \n");
+       $('#log').append('<span>' + move + ' </span>');
+     }
+
+     if(dl[l].match(/^Forced play/)!=null){ // "Forced play" row
+       dl[l].match(/^Forced play: .*\[X:([0-9]+), Y:([0-9]+)/);
+       var xpos = RegExp.$1;
+       var ypos = RegExp.$2;
+       new_tile_x.push(xpos); new_tile_y.push(ypos);
+       console.log("Forced play: X: " + RegExp.$1 +
+       			 ", Y: " + RegExp.$2); 
+     }
+
+     if(dl[l].match(/\|\@/)!=null){ // column list row
+       var cl = dl[l].split(/ +/);
+       cols = (cl.length-3);
+
+       $('#board').html("<tr>");
+       for (var c=0; c<=cols; c++){
+          $('#board tr').append("<td>" + (c==0 ? "" : (String.fromCharCode(0x40+c))));
+       }
+     }
+
+     if(dl[l].match(/[1-9][0-9]*\|/)!=null){ // tile rows
+       $('#board').append('<tr id="row' + row + '"><td>' + row);
+       rows = row;
+
+       var c=0;
+       while(dl[l].charAt(c) != "|") c++;
+       c+=3;
+
+       for(var col=0; col<cols; col++){
+         var tile=" ";
+         if(dl[l].charAt(c) == " "){ // empty cell
+           c++;   
+         } else {
+           var cc = dl[l].indexOf(" ", c);
+	   var t = dl[l].substring(c, cc);
+
+	   var img_url = img_url_base; 
+
+	   if (t.match(/\+/)!=null) img_url = img_url + 'pl-';
+	   if (t.match(/\//)!=null) img_url = img_url + 'sl-';
+	   if (t.match(/\\/)!=null) img_url = img_url + 'bs-';
+
+           if (t.match(/31m/)!=null){ // red
+             img_url = img_url + 'r.png';
+           } else { // white
+             img_url = img_url + 'w.png';
+           }
+
+           if (t.match(/4m/)==null){ // NOT loop or line
+             tile = '<img class="tile" src="' + img_url + '">';
+	   } else {
+             tile = '<img class="tile loopline" src="' + img_url + '">';
+           }
+
+	   c = cc;
+         }
+	 $('#row' + row).append('<td id="r'+row+'c'+(col+1)+'">' + tile);
+	 c++; 
+       }
+       row++;
+     }
+   } // end of all inputs
+   for(var i=0; i<new_tile_x.length; i++){
+      var row = new_tile_y[i];
+      var col = new_tile_x[i];
+
+      if(row==0) row=1;
+      if(col==0) col=1;
+      $('#r' + row + 'c' + col + ' img').removeClass('tile');
+      $('#r' + row + 'c' + col + ' img').addClass('newtile');
+   
+   }
+         $('.tile').removeClass('tile');
+      $('.newtile').fadeIn(1000);
+
+
+   if (d.match(/====/)!=null){
+      $('html').append("Game is over.");
+      $('#board img:not(.loopline)').fadeTo('slow', 0.5);
+   }
+   else  get_next();
+ }
+
+
+ $(function(){
+   // initialize
+
+   get_next();
+
+ });
+     </script>
+     <style type="text/css"><!--
+       body { font-size: 12px; font-family: sans-serif; }
+
+       button { float: right; display: none; }
+
+       #log { width: 120px; float: left; }
+       #log span { width: 60px; display: inline-block; }
+
+       #board    { border-collapse: collapse; }
+       #board td { border: 0px; padding: 0px; width: 52px; height: 52px; }
+       #board tr:first-child td { height: 20px; }
+       #board tr td:first-child { width: 20px; }
+       #board td img          { border: 1px solid white; text-align: center;}
+       #board td img.loopline { border: 1px solid green; }
+       #board td img.tile     { display: none; }
+       #board td img.newtile  { display: none; }
+       -->
+     </style>
+
+   </head>
+  <body>
+    
+    <h2>Trax</h2>
+    
+    <div id="log">
+    </div>
+
+    <table id="board">
+    </table>
+    
+    <h2>Debug...</h2>
+    
+    <pre>
+    </pre>
+
+  </body>
+</html>

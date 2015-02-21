@@ -1,7 +1,7 @@
 #include <iostream>
 #include "trax.h"
 
-bool is_prohibited_3(const int x, const int y){
+bool trax::is_prohibited_3(const int x, const int y){
   int lc, rc, uc, dc;
 
   get_around_colors(x, y, lc, rc, uc, dc);
@@ -16,9 +16,11 @@ bool is_prohibited_3(const int x, const int y){
   return false;
 }
 
-bool is_consistent_placement(int x, int y, char tile){
+// pre-place check (not sufficient for post-place check)
+bool trax::is_consistent_placement(int x, int y, char tile){
   int lc, rc, uc, dc;
 
+  
   get_around_colors(x, y, lc, rc, uc, dc);
   if (tile=='+'){
     if (lc!=rc && (lc!=0 && rc!=0)){
@@ -53,6 +55,58 @@ bool is_consistent_placement(int x, int y, char tile){
     if (uc!=rc && (uc!=0 && rc!=0)){
       std::cout << "**** DIFFERENT COLOR ON UPPER & RIGHT ON '\\' ****\n";
       return false;
+    }
+  }
+
+  return true;
+}
+
+// post-place test
+bool trax::is_line_color_connected(int x, int y){
+  // compare with my color
+  int lc, rc, uc, dc;
+  char tile = board[x][y];
+  
+  get_around_colors(x, y, lc, rc, uc, dc);
+  
+  int my_l, my_r, my_u, my_d;
+  my_r = board_color[x][y];
+  my_l = (tile=='+')  ? my_r : opposite_color(my_r);
+  my_u = (tile=='\\') ? my_r : opposite_color(my_r);
+  my_d = (tile=='/')  ? my_r : opposite_color(my_r);
+
+  if(my_r!=rc && (rc!=0)){
+    std::cout << "**** DIFFERENT COLOR ON RIGHT EDGE ****\n";
+    return false;
+  }
+
+  if(my_l!=lc && (lc!=0)){
+    std::cout << "**** DIFFERENT COLOR ON LEFT EDGE ****\n";
+    return false;
+  }
+
+  if(my_u!=uc && (uc!=0)){
+    std::cout << "**** DIFFERENT COLOR ON TOP EDGE ****\n";
+    return false;
+  }
+
+  if(my_d!=dc && (dc!=0)){
+    std::cout << "**** DIFFERENT COLOR ON BOTTOM EDGE ****\n";
+    return false;
+  }
+  return true;
+}
+
+bool trax::is_board_consistent(){
+  for (int y=1; y<BOARD_MAX; y++){
+    for (int x=1; x<BOARD_MAX; x++){
+      if (board[x][y]!=' '){
+	if (!is_consistent_placement(x, y, board[x][y])) return false;
+	if (!is_line_color_connected(x, y)) return false;
+      }
+
+      if (board[x][y]==' ')
+	if (is_prohibited_3(x,y)) return false;
     }
   }
   return true;
